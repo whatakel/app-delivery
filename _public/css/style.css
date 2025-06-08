@@ -11,6 +11,15 @@ body {
     color:var(--font);
 }
 
+.main{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 100%;
+    min-height: calc(100vh - 170px);
+    padding:2rem;
+}
+
 a{
     color: var(--font);
     text-decoration: none;

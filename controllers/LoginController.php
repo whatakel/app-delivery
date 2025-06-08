@@ -1,9 +1,9 @@
 <?php
-require_once '../models/Usuario.php';
+require_once 'models/Usuario.php';
 
 class LoginController{
     public function cadastrarUsuario(){
-        if($_SERVER['REQUESTED_METHOD'] === 'POST'){
+        if($_SERVER['REQUEST_METHOD'] === 'POST'){
             $nome = $_POST['nome'] ?? '';
             $email = $_POST['email'] ?? '';
             $senha = $_POST['senha'] ?? '';

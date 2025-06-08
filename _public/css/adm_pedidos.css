@@ -1,0 +1,4 @@
+.status-pendente { background-color: #ffc107; color: #000; }       /* Amarelo */
+.status-preparando { background-color: #0dcaf0; color: #000; }     /* Azul claro */
+.status-saiu { background-color: #fd7e14; color: #fff; }           /* Laranja */
+.status-entregue { background-color: #198754; color: #fff; }       /* Verde */
