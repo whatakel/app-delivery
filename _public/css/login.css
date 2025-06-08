@@ -1,3 +1,5 @@
+@import  url('style.css');
+
 body{
     background: url('../img/bg-login.jpg') center center / cover no-repeat;
 }
@@ -12,10 +14,16 @@ body::before {
   pointer-events: none; 
   z-index: -1;
 }
+
+.logo .truck-logo{
+    color:var(--amarelo) !important;
+}
 .header, .footer{
     background-color: transparent !important;
 }
-
+.novo-cadastro{
+    color: white !important;
+}
 .title-section {
     color: white;
 }
@@ -27,4 +35,7 @@ body::before {
     padding: 2rem;
     max-width: 400px;
     width: 100%;
+}
+a:hover{
+    color: var(--hover) !important;
 }

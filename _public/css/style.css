@@ -10,7 +10,14 @@ body {
     flex-direction: column;
     color:var(--font);
 }
-
+.logo{
+    font-size:2rem;
+    font-weight: 600;
+    color:white;
+}
+.logo .truck-logo{
+    color:white !important;
+}
 .main{
     display: flex;
     justify-content: center;
@@ -25,9 +32,11 @@ a{
     text-decoration: none;
     font-weight: 500;
     transition: .3s ease;
+    border-bottom: 1px solid transparent;
+    transition: .3s ease;
 }
 a:hover{
-    color: var(--hover) !important;
+    border-bottom:2px solid white;
 }
 button.btn{
     color:white;
@@ -41,7 +50,9 @@ button.btn:hover{
 .btn button:hover{
     background: tomato;
 }
-
+.nome-menu{
+    cursor: pointer;
+}
 .main-content {
     flex: 1;
     display: flex;

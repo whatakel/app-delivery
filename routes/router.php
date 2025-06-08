@@ -1,25 +1,50 @@
 <?php
+session_start();
 require_once './view/template.php';
 
-$pagina = $_GET['pagina'] ?? 'adm_pedidos';
+$pagina = $_GET['pagina'] ?? 'login';
+$tipoUsuario = $_SESSION['usuario']['tipo'] ?? null;
 
-switch ($pagina){
+
+switch ($pagina) {
     case 'login':
+        if (isset($_SESSION['usuario'])) {
+            $tipo = $_SESSION['usuario']['tipo'] ?? '';
+            if ($tipo === 'adm') {
+                header("Location: index.php?pagina=adm_pedidos");
+            } else {
+                header("Location: index.php?pagina=produtos");
+            }
+            exit;
+        }
+
         require_once './controllers/LoginController.php';
         $controller = new LoginController();
-        $controller->cadastrarUsuario();
-        headerMenu();
+        $controller->formulario();
+
+        headerMenu($tipoUsuario);
         require_once './view/login.php';
-        // require_once './controllers/LoginController.php';
-        // $controller = new LoginController();
-        // $controller->cadastrarUsuario();
-        // require_once './view/login.php';
+        footer();
         break;
-    case 'adm_pedidos': 
-        headerMenu();
+
+    case 'adm_pedidos':
+        require_once './controllers/LoginController.php';
+        LoginController::verificarAcesso('adm');
+        headerMenu($tipoUsuario);
         require_once './view/adm_pedidos.php';
         footer();
         break;
-}
 
-?>
+    case 'produtos':
+        require_once './controllers/LoginController.php';
+        LoginController::verificarAcesso('cliente');
+        headerMenu($tipoUsuario);
+        require_once './view/produtos.php';
+        break;
+
+    case 'sair':
+        require_once './controllers/LoginController.php';
+        $controller = new LoginController();
+        $controller->sair();
+        break;
+}

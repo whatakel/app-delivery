@@ -1,23 +1,50 @@
-<?php 
+<?php
 
-function headerMenu(){
+function headerMenu($tipoUsuario = null)
+{
+
+    $nome = $_SESSION['usuario']['nome'] ?? '';
+
     echo '
     <body>
-    <header class="header bg-warning  py-3">
+    <header class="header bg-warning py-3">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col text-white">
-                    <h4 class="mb-0">
-                        <i class="fa-solid fa-truck-fast text-warning"></i>
+                    <a class="logo mb-0" href="index.php">
+                        <i class="truck-logo fa-solid fa-truck-fast text-warning"></i>
                         On Delivery
-                    </h4>
+                    </a>';
+
+    echo '
                 </div>
                 <div class="col-auto">
-                    <nav>
-                        <!-- opções para o menu -->
-                        <!-- <a href="#" class=" text-decoration-none me-3">Início</a>
-                        <a href="#" class=" text-decoration-none me-3">Sobre</a>
-                        <a href="#" class=" text-decoration-none">Contato</a> -->
+                    <nav>';
+
+    if ($tipoUsuario === 'adm') {
+        if (!empty($nome)) {
+            echo '<span class="text-warning p-2 rounded bg-white me-3">Olá, ' . htmlspecialchars($nome) . '!</span>';
+        }
+        echo '
+            <a href="index.php?pagina=adm_pedidos" class="text-white text-decoration-none me-3">Pedidos</a>
+            <a href="index.php?pagina=adm_usuarios" class="text-white text-decoration-none me-3">Usuários</a>
+            <a href="index.php?pagina=sair" class="text-white text-decoration-none">Sair</a>';
+    } elseif ($tipoUsuario === 'cliente') {
+        if (!empty($nome)) {
+            echo '<span class="nome-menu text-warning p-2 rounded bg-white me-3">Olá, ' . htmlspecialchars($nome) . '!</span>';
+        }
+        echo '
+            <a href="index.php?pagina=produtos" class="text-white text-decoration-none me-3">Produtos</a>
+            <a href="index.php?pagina=meus_pedidos" class="text-white text-decoration-none me-3">Meus Pedidos</a>
+            <a href="index.php?pagina=sair" class="text-white text-decoration-none">Sair</a>';
+    } else {
+        echo '
+            <button class="novo-cadastro btn btn-warning text-center" data-bs-toggle="modal" data-bs-target="#cadastroModal">
+                    <i class="fas fa-user-plus me-2"></i>Criar novo cadastro
+            </button>';
+    }
+
+    echo '
                     </nav>
                 </div>
             </div>
@@ -28,7 +55,9 @@ function headerMenu(){
 }
 
 
-function footer(){
+
+function footer()
+{
     echo '
     </main>
     <footer class="footer text-white bg-warning  py-4 mt-auto">
@@ -43,4 +72,3 @@ function footer(){
     </footer>
     </body>';
 }
-?>

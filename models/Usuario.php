@@ -24,5 +24,21 @@ class Usuario{
         return $stmt->execute();
         
     }
+
+    public function login($email, $senha){
+        $sql = "SELECT * FROM usuarios  WHERE  email = :email LIMIT 1";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if($usuario && password_verify($senha, $usuario['senha'])){
+            return $usuario;
+        }
+
+        return false;
+
+    }
 }
 ?>
