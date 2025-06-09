@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistema</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="_public/css/style.css" rel="stylesheet">
-    <link href="_public/css/adm_pedidos.css" rel="stylesheet">
-</head>
+
  <div class="container shadow-lg p-5 rounded">
     <h2 class="mb-4">Pedidos</h2>
     <table class="table table-bordered table-hover bg-white">

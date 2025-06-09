@@ -22,7 +22,7 @@ switch ($pagina) {
         $controller = new LoginController();
         $controller->formulario();
 
-        headerMenu($tipoUsuario);
+        headerMenu(null, 'login.css', "Login - On Delivery");
         require_once './view/login.php';
         footer();
         break;
@@ -30,7 +30,7 @@ switch ($pagina) {
     case 'adm_pedidos':
         require_once './controllers/LoginController.php';
         LoginController::verificarAcesso('adm');
-        headerMenu($tipoUsuario);
+        headerMenu($tipoUsuario, 'adm_pedidos.css', 'Pedidos');
         require_once './view/adm_pedidos.php';
         footer();
         break;
@@ -38,7 +38,7 @@ switch ($pagina) {
     case 'produtos':
         require_once './controllers/LoginController.php';
         LoginController::verificarAcesso('cliente');
-        headerMenu($tipoUsuario);
+        headerMenu($tipoUsuario, 'produtos.css', 'Pedidos');
         require_once './view/produtos.php';
         break;
 
