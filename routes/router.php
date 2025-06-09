@@ -13,7 +13,7 @@ switch ($pagina) {
             if ($tipo === 'adm') {
                 header("Location: index.php?pagina=adm_pedidos");
             } else {
-                header("Location: index.php?pagina=produtos");
+                header("Location: index.php?pagina=cardapio");
             }
             exit;
         }
@@ -35,11 +35,16 @@ switch ($pagina) {
         footer();
         break;
 
-    case 'produtos':
+    case 'cardapio':
         require_once './controllers/LoginController.php';
         LoginController::verificarAcesso('cliente');
-        headerMenu($tipoUsuario, 'produtos.css', 'Pedidos');
-        require_once './view/produtos.php';
+
+        require_once './controllers/ProdutoController.php';
+        $controller = new ProdutoController();
+        $produtos = $controller->mostrarProdutos();
+
+        headerMenu($tipoUsuario, 'cardapio.css', 'cardapio');
+        require_once './view/cardapio.php';
         break;
 
     case 'sair':

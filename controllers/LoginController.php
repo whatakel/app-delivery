@@ -90,7 +90,7 @@ class LoginController
                 if ($usuario['tipo'] === 'adm') {
                     header("Location: index.php?pagina=adm_pedidos");
                 } else {
-                    header("Location: index.php?pagina=produtos");
+                    header("Location: index.php?pagina=cardapio");
                 }
                 exit;
             } else {
