@@ -6,13 +6,14 @@ class LoginController
 
     public static function verificarAcesso($tipoNecessario)
     {
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+
         if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['tipo'] !== $tipoNecessario) {
             $_SESSION['permissao'] = ['texto' => 'Acesso negado.', 'classe' => 'danger'];
             header("Location: index.php?pagina=login");
             exit;
         }
     }
-
 
     public function formulario()
     {
@@ -33,15 +34,39 @@ class LoginController
             $senha = $_POST['senha'] ?? '';
             $tipo = $_POST['tipo'] ?? 'cliente';
 
-            $usuario = new Usuario();
-            $resultado = $usuario->inserir($nome, $email, $senha, $tipo);
+            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
-            session_start();
-            if ($resultado) {
+            // Validação do e-mail
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $_SESSION['mensagem'] = ['texto' => 'E-mail inválido.', 'classe' => 'danger'];
+                header('Location: index.php?pagina=login');
+                exit;
+            }
+
+            // Validação da senha
+            $senhaValida = preg_match('/[A-Z]/', $senha) &&       // letra maiúscula
+                           preg_match('/[0-9]/', $senha) &&       // número
+                           preg_match('/[\W]/', $senha) &&        // caractere especial
+                           strlen($senha) >= 8;                   // mínimo 8 caracteres
+
+            if (!$senhaValida) {
+                $_SESSION['mensagem'] = ['texto' => 'A senha deve conter no mínimo 8 caracteres, incluindo uma letra maiúscula, um número e um caractere especial.', 'classe' => 'danger'];
+                header('Location: index.php?pagina=login');
+                exit;
+            }
+
+            // Criptografar senha aqui (foi removido do model para evitar dupla hash)
+            $senhaCriptografada = password_hash($senha, PASSWORD_DEFAULT);
+
+            $usuario = new Usuario();
+            $resultado = $usuario->inserir($nome, $email, $senhaCriptografada, $tipo);
+
+            if ($resultado === true) {
                 $_SESSION['mensagem'] = ['texto' => 'Usuário cadastrado com sucesso!', 'classe' => 'success'];
             } else {
-                $_SESSION['mensagem'] = ['texto' => 'Erro ao cadastrar usuário.', 'classe' => 'danger'];
+                $_SESSION['mensagem'] = ['texto' => $resultado, 'classe' => 'danger'];
             }
+
             header('Location: index.php?pagina=login');
             exit;
         }
@@ -56,7 +81,8 @@ class LoginController
             $usuarioModel = new Usuario();
             $usuario = $usuarioModel->login($email, $senha);
 
-            session_start();
+            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+
             if ($usuario) {
                 ini_set('session.gc_maxlifetime', 60 * 60 * 2);
                 session_set_cookie_params(60 * 60 * 2);
@@ -75,14 +101,12 @@ class LoginController
         }
     }
 
-    
-
     public function sair()
     {
-        session_start();
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
         session_unset(); // remove todas as variáveis de sessão
         session_destroy(); // destrói a sessão
         header('Location: index.php?pagina=login');
         exit;
-    }
+    }   
 }
