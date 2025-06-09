@@ -5,9 +5,11 @@ class Conexao{
         $dbname = 'delivery';
         $user = 'root';
         $pass = '';
-        
+        $porta = 3306;
+
         try{
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);
+            // Inclua a porta na string DSN
+            $pdo = new PDO("mysql:host=$host;port=$porta;dbname=$dbname;charset=utf8", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             return $pdo;
         }catch(PDOException $e){

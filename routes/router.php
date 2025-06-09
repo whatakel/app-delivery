@@ -48,6 +48,23 @@ switch ($pagina) {
         footer();
         break;
 
+    case 'pedido/adicionar':
+        require_once './config/conexao.php';
+        $pdo = Conexao::conectar();
+        require_once './controllers/LoginController.php';
+        LoginController::verificarAcesso('cliente');
+        require_once './controllers/PedidoController.php';
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); // Method Not Allowed
+            echo json_encode(['erro' => 'Método inválido']);
+            exit;
+        }
+
+        require_once './controllers/PedidoController.php';
+        $controller = new PedidoController($pdo);
+        $controller->adicionarPedido(); // já retorna JSON e termina
+        break;
+
     case 'sair':
         require_once './controllers/LoginController.php';
         $controller = new LoginController();

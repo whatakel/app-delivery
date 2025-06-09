@@ -14,12 +14,17 @@
                             <div class="row">
                                 <?php foreach ($produtos as $produto): ?>
                                     <div class="col-md-6 mb-3">
-                                        <div class="card h-100 shadow-sm">
-                                            <div class="card-body">
-                                                <h5 class="card-title"><?= htmlspecialchars($produto['nome']) ?></h5>
-                                                <p class="card-text text-muted"><?= htmlspecialchars($produto['descricao']) ?></p>
+                                        <div class="card h-100 shadow-sm position-relative text-white"
+                                            style="background: url('<?= htmlspecialchars($produto['imagem']) ?>') no-repeat center center; background-size: cover;">
+
+                                            <!-- Overlay preto -->
+                                            <div style="position: absolute; top:0; left:0; right:0; bottom:0; background-color: rgba(0,0,0,0.5);"></div>
+
+                                            <div class="card-body position-relative" style="z-index: 1;">
+                                                <h5 class="card-title text-white"><?= htmlspecialchars($produto['nome']) ?></h5>
+                                                <p class="card-text text-white text-muted" style="color:white !important"><?= htmlspecialchars($produto['descricao']) ?></p>
                                                 <div class="d-flex justify-content-between align-items-center">
-                                                    <span class="h5 text-success mb-0">R$ <?= number_format($produto['preco'], 2, ',', '.') ?></span>
+                                                    <span class="h5 bg-white text-green p-1 rounded text-success mb-0">R$ <?= number_format($produto['preco'], 2, ',', '.') ?></span>
                                                     <button class="btn-add btn btn-warning btn-sm"
                                                         onclick="addToCart('<?= htmlspecialchars($produto['nome']) ?>', <?= $produto['preco'] ?>)">
                                                         <i class="fas fa-plus"></i> Adicionar
@@ -28,6 +33,7 @@
                                             </div>
                                         </div>
                                     </div>
+
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -63,37 +69,39 @@
             <!-- Formulário de Finalização -->
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Finalizar Pedido</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>Finalizar Pedido
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <form id="order-form">
+                    <form id="order-form" action="index.php?pagina=fazer_pedido" method="POST">
                         <div class="mb-3">
                             <label for="customer-name" class="form-label">Nome</label>
-                            <input type="text" class="form-control" id="customer-name" required>
+                            <input type="text" class="form-control" id="customer-name" name="nome_cliente" required>
                         </div>
 
                         <div class="mb-3">
                             <label for="customer-address" class="form-label">Endereço de Entrega</label>
-                            <textarea class="form-control" id="customer-address" rows="3" placeholder="Rua, número, bairro, CEP" required></textarea>
+                            <textarea class="form-control" id="customer-address" name="endereco" rows="3" placeholder="Rua, número, bairro, CEP" required></textarea>
                         </div>
 
                         <div class="mb-3">
                             <label for="payment-method" class="form-label">Forma de Pagamento</label>
-                            <select class="form-select" id="payment-method" required>
+                            <select class="form-select" id="payment-method" name="forma_pagamento" required>
                                 <option value="">Selecione...</option>
                                 <option value="dinheiro">Dinheiro</option>
                                 <option value="cartao-credito">Cartão</option>
-                                <option value="cartao-debito">Pix</option>
                                 <option value="pix">PIX</option>
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100" id="finalize-order" disabled>
+                        <button type="submit" class="btn btn-success w-100" id="finalize-order">
                             <i class="fas fa-check-circle me-2"></i>Finalizar Pedido
                         </button>
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
 </main>
@@ -104,32 +112,34 @@
     let cartTotal = 0;
 
     function addToCart(itemName, itemPrice) {
-        const existingItem = cart.find(item => item.name === itemName);
+        // Procura o item no carrinho pelo nome
+        const index = cart.findIndex(item => item.name === itemName);
 
-        if (existingItem) {
-            existingItem.quantity += 1;
+        if (index !== -1) {
+            // Se existir, incrementa a quantidade
+            cart[index].quantidade = (cart[index].quantidade || 1) + 1;
         } else {
+            // Se não existir, adiciona com quantidade 1
             cart.push({
                 name: itemName,
                 price: itemPrice,
-                quantity: 1
+                quantidade: 1
             });
         }
 
         updateCartDisplay();
     }
 
-    function removeFromCart(itemName) {
-        const itemIndex = cart.findIndex(item => item.name === itemName);
-        if (itemIndex > -1) {
-            if (cart[itemIndex].quantity > 1) {
-                cart[itemIndex].quantity -= 1;
-            } else {
-                cart.splice(itemIndex, 1);
-            }
+
+
+    function removeFromCart(index) {
+        if (index >= 0 && index < cart.length) {
+            cart.splice(index, 1);
         }
+
         updateCartDisplay();
     }
+
 
     function updateCartDisplay() {
         const cartItemsDiv = document.getElementById('cart-items');
@@ -147,27 +157,21 @@
             cartTotal = 0;
         } else {
             let itemsHtml = '';
-            let totalItems = 0;
+            let totalItems = cart.length;
             cartTotal = 0;
 
-            cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                cartTotal += itemTotal;
-                totalItems += item.quantity;
+            cart.forEach((item, index) => {
+                cartTotal += item.price;
 
                 itemsHtml += `
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                     <div class="flex-grow-1">
                         <div class="fw-bold">${item.name}</div>
-                        <small class="text-muted">R$ ${item.price.toFixed(2)} cada</small>
+                        <small class="text-muted">R$ ${item.price.toFixed(2)}</small>
                     </div>
                     <div class="d-flex align-items-center">
-                        <button class="btn qtd-btn btn-sm btn-outline-danger me-2" onclick="removeFromCart('${item.name}')">
+                        <button class="btn qtd-btn btn-sm btn-outline-danger me-2" onclick="removeFromCart(${index})">
                             <i class="fas fa-minus"></i>
-                        </button>
-                        <span class="mx-2">${item.quantity}</span>
-                        <button class="btn qtd-btn btn-sm btn-outline-success ms-2" onclick="addToCart('${item.name}', ${item.price})">
-                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
                 </div>
@@ -181,6 +185,7 @@
         cartTotalSpan.textContent = `R$ ${cartTotal.toFixed(2)}`;
         finalizeButton.disabled = cart.length === 0;
     }
+
 
     document.getElementById('order-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -202,6 +207,43 @@
         updateCartDisplay();
         document.getElementById('order-form').reset();
     });
+
+    function enviarPedido() {
+        const nomeCliente = document.getElementById('nome_cliente').value;
+        const endereco = document.getElementById('endereco').value;
+        const telefone = document.getElementById('telefone').value;
+        const formaPagamento = document.getElementById('forma_pagamento').value;
+
+        const pedido = {
+            nome_cliente: nomeCliente,
+            endereco: endereco,
+            telefone: telefone,
+            forma_pagamento: formaPagamento,
+            itens: cart // array com os produtos já adicionados
+        };
+
+        fetch('/router.php?rota=pedido/adicionar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(pedido)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.sucesso) {
+                    alert('Pedido criado com sucesso! ID: ' + data.pedido_id);
+                    cart = [];
+                    updateCartDisplay();
+                    // limpar formulário etc
+                } else {
+                    alert('Erro: ' + (data.erro || 'Erro desconhecido'));
+                }
+            })
+            .catch(err => {
+                alert('Erro na comunicação: ' + err.message);
+            });
+    }
 </script>
 
 </body>
