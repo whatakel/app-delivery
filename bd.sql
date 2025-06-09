@@ -42,3 +42,14 @@ CREATE TABLE itens_pedido (
     FOREIGN KEY (id_pedido) REFERENCES pedidos(id) ON DELETE CASCADE,
     FOREIGN KEY (id_produto) REFERENCES produtos(id)
 );
+
+-- Inclusão de pedidos;
+INSERT INTO pedidos (nome_cliente, endereco, telefone, forma_pagamento, data_pedido)
+VALUES
+('Camila', 'Rua Carlos Gomes, Centro', '41 99564-6865', 'Dinheiro', '2025-06-08'),
+('Lucas Pereira', 'Av. Paraná, 123 - Jardim América', '41 99812-3344', 'Cartão de Crédito', '2025-06-07'),
+('Mariana Silva', 'Rua das Flores, 450 - Centro', '41 98456-7823', 'Pix', '2025-06-07'),
+('João Costa', 'Rua XV de Novembro, 85 - Centro', '41 99632-1122', 'Dinheiro', '2025-06-06'),
+('Fernanda Oliveira', 'Av. das Nações, 999 - Centro', '41 99123-9988', 'Cartão de Débito', '2025-06-06'),
+('Carlos Henrique', 'Rua Alfredo Bufren, 789 - Alto da Glória', '41 99991-1234', 'Pix', '2025-06-05'),
+('Ana Paula', 'Rua Dom Pedro II, 456 - Boa Vista', '41 98877-6655', 'Dinheiro', '2025-06-04');
