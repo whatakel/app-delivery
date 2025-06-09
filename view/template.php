@@ -41,7 +41,7 @@ function headerMenu($tipoUsuario = null, $cssExtra = 'login.css', $titulo = 'On 
             echo '<span class="nome-menu text-warning p-2 rounded bg-white me-3">Olá, ' . htmlspecialchars($nome) . '!</span>';
         }
         echo '
-                    <a href="index.php?pagina=catalogo" class="text-white text-decoration-none me-3">Catalogo</a>
+                    <a href="index.php?pagina=cardapio" class="text-white text-decoration-none me-3">Cardapio</a>
                     <a href="index.php?pagina=meus_pedidos" class="text-white text-decoration-none me-3">Meus Pedidos</a>
                     <a href="index.php?pagina=sair" class="text-white text-decoration-none">Sair</a>';
     } else {

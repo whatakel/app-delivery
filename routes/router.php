@@ -45,6 +45,7 @@ switch ($pagina) {
 
         headerMenu($tipoUsuario, 'cardapio.css', 'cardapio');
         require_once './view/cardapio.php';
+        footer();
         break;
 
     case 'sair':

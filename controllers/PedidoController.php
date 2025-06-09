@@ -1,97 +1,86 @@
 <?php
 
-
+require_once 'models/Pedido.php';
 
 class PedidoController {
-    private $pdo;
+    private PDO $pdo;
 
-    public function __construct(PDO $pdoConnection) {
-        $this->pdo = $pdoConnection;
+    public function __construct(PDO $pdo) {
+        $this->pdo = $pdo;
     }
 
-    public function listar() {
+    public function listar(): array {
         try {
-            $sql = "SELECT id, nome_cliente, status, forma_pagamento, data_pedido FROM pedidos ORDER BY data_pedido DESC";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+            $sql = "SELECT * FROM pedidos ORDER BY data_pedido DESC";
+            $stmt = $this->pdo->query($sql);
+            $pedidos = [];
+
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $pedidos[] = new Pedido($row);
+            }
+
+            return $pedidos;
         } catch (PDOException $e) {
             error_log("Erro ao listar pedidos: " . $e->getMessage());
             return [];
         }
     }
 
-    public function pegarPedido($id) {
+    public function pegarPedido(int $id): ?Pedido {
         try {
-            $sql = "SELECT id, nome_cliente, status, forma_pagamento, data_pedido FROM pedidos WHERE id = :id";
+            $sql = "SELECT * FROM pedidos WHERE id = :id";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC); // Retorna como array associativo para formulários
+            $stmt->execute([':id' => $id]);
+
+            $dados = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $dados ? new Pedido($dados) : null;
         } catch (PDOException $e) {
             error_log("Erro ao pegar pedido: " . $e->getMessage());
-            return false;
+            return null;
         }
     }
 
-    public function atualizarPedido($id, $nome_cliente, $status, $forma_pagamento, $data_pedido) {
+    public function atualizarPedido(Pedido $pedido): bool {
         try {
-            $sql = "UPDATE pedidos SET
+            $sql = "UPDATE pedidos SET 
                         nome_cliente = :nome_cliente,
                         status = :status,
                         forma_pagamento = :forma_pagamento,
                         data_pedido = :data_pedido
                     WHERE id = :id";
+
             $stmt = $this->pdo->prepare($sql);
-
-            $stmt->bindParam(':nome_cliente', $nome_cliente);
-            $stmt->bindParam(':status', $status);
-            $stmt->bindParam(':forma_pagamento', $forma_pagamento);
-            $stmt->bindParam(':data_pedido', $data_pedido);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            return $stmt->execute();
-
+            return $stmt->execute([
+                ':nome_cliente' => $pedido->nome_cliente,
+                ':status' => $pedido->status,
+                ':forma_pagamento' => $pedido->forma_pagamento,
+                ':data_pedido' => $pedido->data_pedido,
+                ':id' => $pedido->id
+            ]);
         } catch (PDOException $e) {
             error_log("Erro ao atualizar pedido: " . $e->getMessage());
             return false;
         }
     }
 
-    /**
-     * Altera apenas o status de um pedido.
-     * @param int $id O ID do pedido.
-     * @param string $novoStatus O novo status.
-     * @return bool Retorna true em caso de sucesso, false em caso de falha.
-     */
-    public function alterarStatusPedido($id, $novoStatus) {
+    public function alterarStatusPedido(int $id, string $novoStatus): bool {
         try {
             $sql = "UPDATE pedidos SET status = :status WHERE id = :id";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':status', $novoStatus);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            return $stmt->execute();
+            return $stmt->execute([':status' => $novoStatus, ':id' => $id]);
         } catch (PDOException $e) {
             error_log("Erro ao alterar status do pedido: " . $e->getMessage());
             return false;
         }
     }
 
-    /**
-     * Exclui um pedido do banco de dados.
-     * @param int $id O ID do pedido a ser excluído.
-     * @return bool Retorna true em caso de sucesso, false em caso de falha.
-     */
-    public function excluirPedido($id) {
+    public function excluirPedido(int $id): bool {
         try {
-            $sql = "DELETE FROM pedidos WHERE id = :id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            return $stmt->execute();
+            $stmt = $this->pdo->prepare("DELETE FROM pedidos WHERE id = :id");
+            return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            error_log("Erro ao excluir pedido no banco de dados: " . $e->getMessage());
+            error_log("Erro ao excluir pedido: " . $e->getMessage());
             return false;
         }
     }
 }
-?>
