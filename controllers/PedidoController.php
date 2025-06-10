@@ -13,155 +13,41 @@ class PedidoController
 
     public function listarPedidosCliente(): array
     {
-        try {
-            if (!isset($_SESSION['usuario']['id'])) {
-                return [];
-            }
-
-            $sql = "SELECT p.*, 
-                    GROUP_CONCAT(CONCAT(ip.nome_produto, ':', ip.quantidade) SEPARATOR '|') as itens_info
-                    FROM pedidos p
-                    LEFT JOIN itens_pedido ip ON p.id = ip.id_pedido
-                    WHERE p.id_usuario = :id_usuario
-                    GROUP BY p.id
-                    ORDER BY p.data_pedido DESC";
-            
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':id_usuario' => $_SESSION['usuario']['id']]);
-            
-            $pedidos = [];
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                // Processar os itens do pedido
-                $itens = [];
-                if (!empty($row['itens_info'])) {
-                    $itensArray = explode('|', $row['itens_info']);
-                    foreach ($itensArray as $item) {
-                        list($nome, $quantidade) = explode(':', $item);
-                        $itens[] = [
-                            'nome' => $nome,
-                            'quantidade' => $quantidade
-                        ];
-                    }
-                }
-                
-                $pedidos[] = [
-                    'id' => $row['id'],
-                    'data_pedido' => $row['data_pedido'],
-                    'status' => $row['status'],
-                    'total' => $row['total'] ?? 0,
-                    'forma_pagamento' => $row['forma_pagamento'],
-                    'itens' => $itens
-                ];
-            }
-            
-            return $pedidos;
-        } catch (PDOException $e) {
-            error_log("Erro ao listar pedidos do cliente: " . $e->getMessage());
+        if (!isset($_SESSION['usuario']['id'])) {
             return [];
         }
+
+        $pedido = new Pedido([]);
+        return $pedido->listarPedidosCliente($this->pdo, $_SESSION['usuario']['id']);
     }
 
     public function listar(): array
     {
-        try {
-            $sql = "SELECT p.*, 
-                    GROUP_CONCAT(CONCAT(ip.nome_produto, ':', ip.quantidade) SEPARATOR '|') as itens_info,
-                    SUM(ip.preco_unitario * ip.quantidade) as total
-                    FROM pedidos p
-                    LEFT JOIN itens_pedido ip ON p.id = ip.id_pedido
-                    GROUP BY p.id
-                    ORDER BY p.data_pedido DESC";
-            
-            $stmt = $this->pdo->query($sql);
-            $pedidos = [];
-
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                // Processar os itens do pedido
-                $itens = [];
-                if (!empty($row['itens_info'])) {
-                    $itensArray = explode('|', $row['itens_info']);
-                    foreach ($itensArray as $item) {
-                        list($nome, $quantidade) = explode(':', $item);
-                        $itens[] = [
-                            'nome' => $nome,
-                            'quantidade' => $quantidade
-                        ];
-                    }
-                }
-                
-                $pedido = new Pedido($row);
-                $pedido->itens = $itens;
-                $pedido->total = $row['total'] ?? 0;
-                $pedidos[] = $pedido;
-            }
-
-            return $pedidos;
-        } catch (PDOException $e) {
-            error_log("Erro ao listar pedidos: " . $e->getMessage());
-            return [];
-        }
+        $pedido = new Pedido([]);
+        return $pedido->listarTodos($this->pdo);
     }
 
     public function pegarPedido(int $id): ?Pedido
     {
-        try {
-            $sql = "SELECT * FROM pedidos WHERE id = :id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([':id' => $id]);
-
-            $dados = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $dados ? new Pedido($dados) : null;
-        } catch (PDOException $e) {
-            error_log("Erro ao pegar pedido: " . $e->getMessage());
-            return null;
-        }
+        $pedido = new Pedido([]);
+        return $pedido->buscarPorId($this->pdo, $id);
     }
 
     public function atualizarPedido(Pedido $pedido): bool
     {
-        try {
-            $sql = "UPDATE pedidos SET 
-                        nome_cliente = :nome_cliente,
-                        status = :status,
-                        forma_pagamento = :forma_pagamento,
-                        data_pedido = :data_pedido
-                    WHERE id = :id";
-
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([
-                ':nome_cliente' => $pedido->nome_cliente,
-                ':status' => $pedido->status,
-                ':forma_pagamento' => $pedido->forma_pagamento,
-                ':data_pedido' => $pedido->data_pedido,
-                ':id' => $pedido->id
-            ]);
-        } catch (PDOException $e) {
-            error_log("Erro ao atualizar pedido: " . $e->getMessage());
-            return false;
-        }
+        return $pedido->atualizar($this->pdo);
     }
 
     public function alterarStatusPedido(int $id, string $novoStatus): bool
     {
-        try {
-            $sql = "UPDATE pedidos SET status = :status WHERE id = :id";
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([':status' => $novoStatus, ':id' => $id]);
-        } catch (PDOException $e) {
-            error_log("Erro ao alterar status do pedido: " . $e->getMessage());
-            return false;
-        }
+        $pedido = new Pedido([]);
+        return $pedido->atualizarStatus($this->pdo, $id, $novoStatus);
     }
 
     public function excluirPedido(int $id): bool
     {
-        try {
-            $stmt = $this->pdo->prepare("DELETE FROM pedidos WHERE id = :id");
-            return $stmt->execute([':id' => $id]);
-        } catch (PDOException $e) {
-            error_log("Erro ao excluir pedido: " . $e->getMessage());
-            return false;
-        }
+        $pedido = new Pedido([]);
+        return $pedido->excluir($this->pdo, $id);
     }
 
     public function adicionarPedido()
@@ -214,5 +100,40 @@ class PedidoController
             http_response_code(500);
             echo json_encode(['erro' => 'Erro ao processar pedido: ' . $e->getMessage()]);
         }
+    }
+
+    public function gerenciarPedidosAdmin()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pedido_id'])) {
+            $id = (int)$_POST['pedido_id'];
+            if (isset($_POST['status'])) {
+                $sucesso = $this->alterarStatusPedido($id, $_POST['status']);
+                $_SESSION['msg_' . ($sucesso ? 'sucesso' : 'erro')] = "Status do pedido " . ($sucesso ? "atualizado" : "não pôde ser atualizado") . "!";
+            } else {
+                $sucesso = $this->excluirPedido($id);
+                $_SESSION['msg_' . ($sucesso ? 'sucesso' : 'erro')] = "Pedido " . ($sucesso ? "excluído" : "não pôde ser excluído") . "!";
+            }
+            header('Location: ' . $_SERVER['PHP_SELF']);
+            exit;
+        }
+
+        return [
+            'pedidos' => $this->listar(),
+            'mensagem' => $this->getMensagem()
+        ];
+    }
+
+    private function getMensagem()
+    {
+        if (!empty($_SESSION['msg_sucesso'])) {
+            $mensagem = "<div class='alert alert-success'>{$_SESSION['msg_sucesso']}</div>";
+            unset($_SESSION['msg_sucesso']);
+            return $mensagem;
+        } elseif (!empty($_SESSION['msg_erro'])) {
+            $mensagem = "<div class='alert alert-danger'>{$_SESSION['msg_erro']}</div>";
+            unset($_SESSION['msg_erro']);
+            return $mensagem;
+        }
+        return '';
     }
 }

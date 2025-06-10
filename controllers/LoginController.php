@@ -44,10 +44,10 @@ class LoginController
             }
 
             // Validação da senha
-            $senhaValida = preg_match('/[A-Z]/', $senha) &&       // letra maiúscula
-                           preg_match('/[0-9]/', $senha) &&       // número
-                           preg_match('/[\W]/', $senha) &&        // caractere especial
-                           strlen($senha) >= 8;                   // mínimo 8 caracteres
+            $senhaValida = preg_match('/[A-Z]/', $senha) &&
+                preg_match('/[0-9]/', $senha) &&
+                preg_match('/[\W]/', $senha) &&
+                strlen($senha) >= 8;
 
             if (!$senhaValida) {
                 $_SESSION['mensagem'] = ['texto' => 'A senha deve conter no mínimo 8 caracteres, incluindo uma letra maiúscula, um número e um caractere especial.', 'classe' => 'danger'];
@@ -55,7 +55,6 @@ class LoginController
                 exit;
             }
 
-            // Criptografar senha aqui (foi removido do model para evitar dupla hash)
             $senhaCriptografada = password_hash($senha, PASSWORD_DEFAULT);
 
             $usuario = new Usuario();
@@ -77,6 +76,7 @@ class LoginController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = $_POST['email'] ?? '';
             $senha = $_POST['senha'] ?? '';
+            $lembrar = isset($_POST['lembrar']); // checkbox "lembrar de mim"
 
             $usuarioModel = new Usuario();
             $usuario = $usuarioModel->login($email, $senha);
@@ -87,6 +87,20 @@ class LoginController
                 ini_set('session.gc_maxlifetime', 60 * 60 * 2);
                 session_set_cookie_params(60 * 60 * 2);
                 $_SESSION['usuario'] = $usuario;
+
+                //Armazenar cookie 
+                if ($lembrar) {
+                    setcookie('usuario_email', $email, time() + (86400 * 30), "/");
+                    setcookie('usuario_senha', $senha, time() + (86400 * 30), "/");
+                } else {
+                    // Remover cookie
+                    if (isset($_COOKIE['usuario_email'])) {
+                        setcookie('usuario_email', '', time() - 3600, "/");
+                        setcookie('usuario_senha', '', time() - 3600, "/");
+                    }
+                }
+
+                // Redirecionar de acordo com o tipo de usuário
                 if ($usuario['tipo'] === 'adm') {
                     header("Location: index.php?pagina=adm_pedidos");
                 } else {
@@ -101,12 +115,13 @@ class LoginController
         }
     }
 
+
     public function sair()
     {
         if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-        session_unset(); // remove todas as variáveis de sessão
-        session_destroy(); // destrói a sessão
+        session_unset();
+        session_destroy();
         header('Location: index.php?pagina=login');
         exit;
-    }   
+    }
 }

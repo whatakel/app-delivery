@@ -25,8 +25,8 @@ $dadosTeste = [
 $id = $pedido->inserirPedido($dadosTeste);
 
 if ($id) {
-    echo "✅ Pedido inserido com ID: $id";
+    echo "Pedido inserido com ID: $id";
 } else {
-    echo "❌ Erro ao inserir pedido.";
+    echo "Erro ao inserir pedido.";
 }
 ?>

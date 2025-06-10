@@ -56,10 +56,17 @@ class Usuario {
         }
     }
 
-    public function atualizar($id, $nome, $email, $tipo) {
+    public function atualizar($id, $nome, $email, $tipo, $senha = null) {
         try {
-            $sql = "UPDATE usuarios SET nome = :nome, email = :email, tipo = :tipo WHERE id = :id";
-            $stmt = $this->conn->prepare($sql);
+            if ($senha) {
+                $sql = "UPDATE usuarios SET nome = :nome, email = :email, tipo = :tipo, senha = :senha WHERE id = :id";
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindParam(':senha', $senha);
+            } else {
+                $sql = "UPDATE usuarios SET nome = :nome, email = :email, tipo = :tipo WHERE id = :id";
+                $stmt = $this->conn->prepare($sql);
+            }
+            
             $stmt->bindParam(':id', $id);
             $stmt->bindParam(':nome', $nome);
             $stmt->bindParam(':email', $email);

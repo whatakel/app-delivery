@@ -82,4 +82,153 @@ class Pedido
             throw new Exception("Erro ao inserir pedido no banco de dados: " . $e->getMessage());
         }
     }
+
+    public function listarPedidosCliente(PDO $pdo, int $idUsuario): array
+    {
+        try {
+            $sql = "SELECT p.*, 
+                    GROUP_CONCAT(CONCAT(ip.nome_produto, ':', ip.quantidade) SEPARATOR '|') as itens_info
+                    FROM pedidos p
+                    LEFT JOIN itens_pedido ip ON p.id = ip.id_pedido
+                    WHERE p.id_usuario = :id_usuario
+                    GROUP BY p.id
+                    ORDER BY p.data_pedido DESC";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id_usuario' => $idUsuario]);
+            
+            $pedidos = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Processar os itens do pedido
+                $itens = [];
+                if (!empty($row['itens_info'])) {
+                    $itensArray = explode('|', $row['itens_info']);
+                    foreach ($itensArray as $item) {
+                        list($nome, $quantidade) = explode(':', $item);
+                        $itens[] = [
+                            'nome' => $nome,
+                            'quantidade' => $quantidade
+                        ];
+                    }
+                }
+                
+                $pedidos[] = [
+                    'id' => $row['id'],
+                    'data_pedido' => $row['data_pedido'],
+                    'status' => $row['status'],
+                    'total' => $row['total'] ?? 0,
+                    'forma_pagamento' => $row['forma_pagamento'],
+                    'itens' => $itens
+                ];
+            }
+            
+            return $pedidos;
+        } catch (PDOException $e) {
+            error_log("Erro ao listar pedidos do cliente: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function listarTodos(PDO $pdo): array
+    {
+        try {
+            $sql = "SELECT p.*, 
+                    GROUP_CONCAT(CONCAT(ip.nome_produto, ':', ip.quantidade) SEPARATOR '|') as itens_info,
+                    SUM(ip.preco_unitario * ip.quantidade) as total
+                    FROM pedidos p
+                    LEFT JOIN itens_pedido ip ON p.id = ip.id_pedido
+                    GROUP BY p.id
+                    ORDER BY p.data_pedido DESC";
+            
+            $stmt = $pdo->query($sql);
+            $pedidos = [];
+
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Processar os itens do pedido
+                $itens = [];
+                if (!empty($row['itens_info'])) {
+                    $itensArray = explode('|', $row['itens_info']);
+                    foreach ($itensArray as $item) {
+                        list($nome, $quantidade) = explode(':', $item);
+                        $itens[] = [
+                            'nome' => $nome,
+                            'quantidade' => $quantidade
+                        ];
+                    }
+                }
+                
+                $pedido = new Pedido($row);
+                $pedido->itens = $itens;
+                $pedido->total = $row['total'] ?? 0;
+                $pedidos[] = $pedido;
+            }
+
+            return $pedidos;
+        } catch (PDOException $e) {
+            error_log("Erro ao listar pedidos: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function buscarPorId(PDO $pdo, int $id): ?Pedido
+    {
+        try {
+            $sql = "SELECT * FROM pedidos WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':id' => $id]);
+
+            $dados = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $dados ? new Pedido($dados) : null;
+        } catch (PDOException $e) {
+            error_log("Erro ao pegar pedido: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function atualizar(PDO $pdo): bool
+    {
+        try {
+            $sql = "UPDATE pedidos SET 
+                        nome_cliente = :nome_cliente,
+                        status = :status,
+                        forma_pagamento = :forma_pagamento,
+                        data_pedido = :data_pedido
+                    WHERE id = :id";
+
+            $stmt = $pdo->prepare($sql);
+            return $stmt->execute([
+                ':nome_cliente' => $this->nome_cliente,
+                ':status' => $this->status,
+                ':forma_pagamento' => $this->forma_pagamento,
+                ':data_pedido' => $this->data_pedido,
+                ':id' => $this->id
+            ]);
+        } catch (PDOException $e) {
+            error_log("Erro ao atualizar pedido: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function atualizarStatus(PDO $pdo, int $id, string $novoStatus): bool
+    {
+        try {
+            $sql = "UPDATE pedidos SET status = :status WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            return $stmt->execute([':status' => $novoStatus, ':id' => $id]);
+        } catch (PDOException $e) {
+            error_log("Erro ao alterar status do pedido: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function excluir(PDO $pdo, int $id): bool
+    {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM pedidos WHERE id = :id");
+            return $stmt->execute([':id' => $id]);
+        } catch (PDOException $e) {
+            error_log("Erro ao excluir pedido: " . $e->getMessage());
+            return false;
+        }
+    }
 }

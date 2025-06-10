@@ -11,20 +11,46 @@ $pedidos = $controller->listarPedidosCliente();
   <table class="table table-bordered table-hover bg-white">
     <thead class="table-dark">
       <tr>
-        <th>ID</th><th>Status</th><th>Pagamento</th><th>Data</th><th>Itens</th><th>Total</th>
+        <th>ID</th>
+        <th>Status</th>
+        <th>Pagamento</th>
+        <th>Data</th>
+        <th>Itens</th>
+        <th>Total</th>
       </tr>
     </thead>
     <tbody>
       <?php if (is_array($pedidos) && count($pedidos) > 0): ?>
         <?php foreach ($pedidos as $pedido): ?>
           <?php
-            $statusClass = match ($pedido['status']) {
-              'Pendente' => 'status-pendente',
-              'Preparando' => 'status-preparando',
-              'Saiu para entrega' => 'status-saiu-para-entrega',
-              'Entregue' => 'status-entregue',
-              default => ''
-            };
+          // php 8
+          // $statusClass = match ($pedido['status']) {
+          //   'Pendente' => 'status-pendente',
+          //   'Preparando' => 'status-preparando',
+          //   'Saiu para entrega' => 'status-saiu-para-entrega',
+          //   'Entregue' => 'status-entregue',
+          //   default => ''
+          // };
+
+          $statusClass = '';
+          switch ($pedido['status']) {
+            case 'Pendente':
+              $statusClass = 'status-pendente';
+              break;
+            case 'Preparando':
+              $statusClass = 'status-preparando';
+              break;
+            case 'Saiu para entrega':
+              $statusClass = 'status-saiu-para-entrega';
+              break;
+            case 'Entregue':
+              $statusClass = 'status-entregue';
+              break;
+            default:
+              $statusClass = '';
+              break;
+          }
+
           ?>
           <tr>
             <td><?= htmlspecialchars($pedido['id']) ?></td>
@@ -68,7 +94,11 @@ $pedidos = $controller->listarPedidosCliente();
           <?php endif; ?>
         <?php endforeach; ?>
       <?php else: ?>
-        <tr><td colspan="6" class="text-center"><p class="alert alert-info">Nenhum pedido encontrado para exibir.</p></td></tr>
+        <tr>
+          <td colspan="6" class="text-center">
+            <p class="alert alert-info">Nenhum pedido encontrado para exibir.</p>
+          </td>
+        </tr>
       <?php endif; ?>
     </tbody>
   </table>

@@ -23,14 +23,22 @@
                                     <i class="fas fa-envelope me-2"></i>Email
                                 </label>
                                 <input type="hidden" name="acao" value="login">
-                                <input type="email" name="email" class="form-control" id="email" placeholder="seu@email.com" required>
+                                <input type="email" name="email" class="form-control" id="email" placeholder="seu@email.com"
+                                    value="<?= htmlspecialchars($_COOKIE['usuario_email'] ?? '') ?>" required>
+
                             </div>
 
                             <div class="mb-4">
                                 <label for="password" class="form-label">
                                     <i class="fas fa-lock me-2"></i>Senha
                                 </label>
-                                <input type="password" name="senha" class="form-control" id="password" placeholder="******" required>
+                                <input type="password" name="senha" class="form-control" id="password"
+                                    value="<?= htmlspecialchars($_COOKIE['usuario_senha'] ?? '') ?>" required>
+                            </div>
+
+                            <div class="mb-3 form-check p-0">
+                                <input type="checkbox" name="lembrar" <?= isset($_COOKIE['usuario_email'], $_COOKIE['usuario_senha']) ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="lembrar">Lembrar senha</label>
                             </div>
 
                             <div class="d-grid gap-2">
@@ -103,45 +111,7 @@
     </div>
 </div>
 
-<!-- Rodapé -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-
-<!-- Validação de e-mail e senha -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('#form-cadastro');
-    const emailInput = document.querySelector('#cadastroEmail');
-    const senhaInput = document.querySelector('#cadastroSenha');
-    const msgErroEmail = document.querySelector('#erro-email');
-    const msgErroSenha = document.querySelector('#erro-senha');
-
-    if (!form) return;
-
-    form.addEventListener('submit', function (e) {
-        let valido = true;
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailInput.value)) {
-            msgErroEmail.textContent = "E-mail inválido.";
-            valido = false;
-        } else {
-            msgErroEmail.textContent = "";
-        }
-
-        const senha = senhaInput.value;
-        const senhaRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%&*]).{8,}$/;
-        if (!senhaRegex.test(senha)) {
-            msgErroSenha.textContent = "Senha inválida. Use pelo menos 1 letra maiúscula, 1 número, 1 caractere especial (!@#$%&*) e mínimo 8 caracteres.";
-            valido = false;
-        } else {
-            msgErroSenha.textContent = "";
-        }
-
-        if (!valido) {
-            e.preventDefault();
-        }
-    });
-});
-</script>
+<script src="_public/js/validacaoSenha.js"></script>
 
 </html>
