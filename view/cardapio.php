@@ -26,7 +26,7 @@
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <span class="h5 bg-white text-green p-1 rounded text-success mb-0">R$ <?= number_format($produto['preco'], 2, ',', '.') ?></span>
                                                     <button class="btn-add btn btn-warning btn-sm"
-                                                        onclick="addToCart('<?= htmlspecialchars($produto['nome']) ?>', <?= $produto['preco'] ?>)">
+                                                        onclick="addToCart('<?= htmlspecialchars($produto['nome']) ?>', <?= $produto['preco'] ?>, <?= $produto['id'] ?>)">
                                                         <i class="fas fa-plus"></i> Adicionar
                                                     </button>
                                                 </div>
@@ -74,10 +74,10 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form id="order-form" action="index.php?pagina=fazer_pedido" method="POST">
+                    <form id="order-form" onsubmit="enviarPedido(); return false;">
                         <div class="mb-3">
                             <label for="customer-name" class="form-label">Nome</label>
-                            <input type="text" class="form-control" id="customer-name" name="nome_cliente" required>
+                            <input type="text" class="form-control" id="customer-name" name="nome_cliente" value="<?php echo htmlspecialchars($_SESSION['usuario']['nome'] ?? ''); ?>" disabled readonly>
                         </div>
 
                         <div class="mb-3">
@@ -86,11 +86,16 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="customer-phone" class="form-label">Telefone</label>
+                            <input type="tel" class="form-control" id="customer-phone" name="telefone" required>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="payment-method" class="form-label">Forma de Pagamento</label>
                             <select class="form-select" id="payment-method" name="forma_pagamento" required>
                                 <option value="">Selecione...</option>
                                 <option value="dinheiro">Dinheiro</option>
-                                <option value="cartao-credito">Cartão</option>
+                                <option value="cartao">Cartão</option>
                                 <option value="pix">PIX</option>
                             </select>
                         </div>
@@ -107,11 +112,12 @@
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/imask"></script>
 <script>
     let cart = [];
     let cartTotal = 0;
 
-    function addToCart(itemName, itemPrice) {
+    function addToCart(itemName, itemPrice, itemId) {
         // Procura o item no carrinho pelo nome
         const index = cart.findIndex(item => item.name === itemName);
 
@@ -121,6 +127,7 @@
         } else {
             // Se não existir, adiciona com quantidade 1
             cart.push({
+                id: itemId,
                 name: itemName,
                 price: itemPrice,
                 quantidade: 1
@@ -130,8 +137,6 @@
         updateCartDisplay();
     }
 
-
-
     function removeFromCart(index) {
         if (index >= 0 && index < cart.length) {
             cart.splice(index, 1);
@@ -139,7 +144,6 @@
 
         updateCartDisplay();
     }
-
 
     function updateCartDisplay() {
         const cartItemsDiv = document.getElementById('cart-items');
@@ -149,33 +153,35 @@
 
         if (cart.length === 0) {
             cartItemsDiv.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
-                <p>Seu carrinho está vazio</p>
-            </div>
-        `;
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                    <p>Seu carrinho está vazio</p>
+                </div>
+            `;
             cartTotal = 0;
         } else {
             let itemsHtml = '';
-            let totalItems = cart.length;
+            let totalItems = 0;
             cartTotal = 0;
 
             cart.forEach((item, index) => {
-                cartTotal += item.price;
+                const itemTotal = item.price * item.quantidade;
+                cartTotal += itemTotal;
+                totalItems += item.quantidade;
 
                 itemsHtml += `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                    <div class="flex-grow-1">
-                        <div class="fw-bold">${item.name}</div>
-                        <small class="text-muted">R$ ${item.price.toFixed(2)}</small>
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${item.name}</div>
+                            <small class="text-muted">R$ ${item.price.toFixed(2)} x ${item.quantidade}</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <button class="btn qtd-btn btn-sm btn-outline-danger me-2" onclick="removeFromCart(${index})">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-center">
-                        <button class="btn qtd-btn btn-sm btn-outline-danger me-2" onclick="removeFromCart(${index})">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
+                `;
             });
 
             cartItemsDiv.innerHTML = itemsHtml;
@@ -185,7 +191,6 @@
         cartTotalSpan.textContent = `R$ ${cartTotal.toFixed(2)}`;
         finalizeButton.disabled = cart.length === 0;
     }
-
 
     document.getElementById('order-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -208,41 +213,74 @@
         document.getElementById('order-form').reset();
     });
 
+    // Phone mask initialization
+    const phoneInput = document.getElementById('customer-phone');
+    const phoneMask = IMask(phoneInput, {
+        mask: '(00) 00000-0000'
+    });
+
+    // Phone validation function
+    function validatePhone(phone) {
+        const phoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
+        return phoneRegex.test(phone);
+    }
+
+    // Modify the existing enviarPedido function to include phone validation
     function enviarPedido() {
-        const nomeCliente = document.getElementById('nome_cliente').value;
-        const endereco = document.getElementById('endereco').value;
-        const telefone = document.getElementById('telefone').value;
-        const formaPagamento = document.getElementById('forma_pagamento').value;
+        const nomeCliente = document.getElementById('customer-name').value;
+        const endereco = document.getElementById('customer-address').value;
+        const telefone = document.getElementById('customer-phone').value;
+        const formaPagamento = document.getElementById('payment-method').value;
+
+        if (cart.length === 0) {
+            alert('Adicione itens ao seu pedido antes de finalizar!');
+            return;
+        }
+
+        if (!validatePhone(telefone)) {
+            alert('Por favor, insira um número de telefone válido no formato (00) 00000-0000');
+            return;
+        }
 
         const pedido = {
             nome_cliente: nomeCliente,
             endereco: endereco,
             telefone: telefone,
             forma_pagamento: formaPagamento,
-            itens: cart // array com os produtos já adicionados
+            itens: cart
         };
 
-        fetch('/router.php?rota=pedido/adicionar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(pedido)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.sucesso) {
-                    alert('Pedido criado com sucesso! ID: ' + data.pedido_id);
-                    cart = [];
-                    updateCartDisplay();
-                    // limpar formulário etc
-                } else {
-                    alert('Erro: ' + (data.erro || 'Erro desconhecido'));
-                }
-            })
-            .catch(err => {
-                alert('Erro na comunicação: ' + err.message);
-            });
+        fetch('index.php?pagina=pedido/adicionar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(pedido)
+        })
+        .then(async response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Resposta do servidor não é JSON válido');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.sucesso) {
+                alert('Pedido criado com sucesso! ID: ' + data.pedido_id);
+                cart = [];
+                updateCartDisplay();
+                document.getElementById('order-form').reset();
+                // Reset the phone mask
+                phoneMask.value = '';
+            } else {
+                alert('Erro: ' + (data.erro || 'Erro desconhecido'));
+            }
+        })
+        .catch(err => {
+            console.error('Erro:', err);
+            alert('Erro ao processar o pedido. Por favor, tente novamente.');
+        });
     }
 </script>
 

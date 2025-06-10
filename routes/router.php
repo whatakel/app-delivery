@@ -27,11 +27,27 @@ switch ($pagina) {
         footer();
         break;
 
+    case 'meus_pedidos':
+        require_once './controllers/LoginController.php';
+        LoginController::verificarAcesso('cliente');
+        headerMenu($tipoUsuario, 'clientes_pedido.css', 'Meus Pedidos');
+        require_once './view/clientes_pedido.php';
+        footer();
+        break;
+
     case 'adm_pedidos':
         require_once './controllers/LoginController.php';
         LoginController::verificarAcesso('adm');
         headerMenu($tipoUsuario, 'adm_pedidos.css', 'Pedidos');
         require_once './view/adm_pedidos.php';
+        footer();
+        break;
+
+    case 'adm_usuarios':
+        require_once './controllers/LoginController.php';
+        LoginController::verificarAcesso('adm');
+        headerMenu($tipoUsuario, 'adm_pedidos.css', 'Usuários');
+        require_once './view/usuarios.php';
         footer();
         break;
 

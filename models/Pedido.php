@@ -12,6 +12,8 @@ class Pedido
     public $forma_pagamento;
     public $status;
     public $data_pedido;
+    public $itens;
+    public $total;
 
     public function __construct($dados)
     {
@@ -23,17 +25,26 @@ class Pedido
         $this->forma_pagamento = $dados['forma_pagamento'] ?? '';
         $this->status = $dados['status'] ?? 'Pendente'; // default
         $this->data_pedido = $dados['data_pedido'] ?? date('Y-m-d H:i:s');
+        $this->itens = [];
+        $this->total = $dados['total'] ?? 0;
     }
 
     public function inserirPedido($dados)
     {
         try {
             $conn = Conexao::conectar();
+            if (!$conn) {
+                throw new Exception("Erro ao conectar ao banco de dados");
+            }
 
             // Inserir o pedido
             $sql = "INSERT INTO pedidos (id_usuario, nome_cliente, endereco, telefone, forma_pagamento, status, data_pedido)
                 VALUES (?, ?, ?, ?, ?, 'Pendente', NOW())";
             $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Erro ao preparar a query do pedido");
+            }
+
             $stmt->execute([
                 $dados['id_usuario'],
                 $dados['nome_cliente'],
@@ -43,15 +54,22 @@ class Pedido
             ]);
 
             $pedidoId = $conn->lastInsertId();
+            if (!$pedidoId) {
+                throw new Exception("Erro ao obter o ID do pedido inserido");
+            }
 
             // Inserir os itens
-            $sqlItem = "INSERT INTO itens_pedido (id_pedido, nome_produto, preco_unitario, quantidade)
-                    VALUES (?, ?, ?, ?)";
+            $sqlItem = "INSERT INTO itens_pedido (id_pedido, id_produto, nome_produto, preco_unitario, quantidade)
+                    VALUES (?, ?, ?, ?, ?)";
             $stmtItem = $conn->prepare($sqlItem);
+            if (!$stmtItem) {
+                throw new Exception("Erro ao preparar a query dos itens");
+            }
 
             foreach ($dados['itens'] as $item) {
                 $stmtItem->execute([
                     $pedidoId,
+                    $item['id'],
                     $item['name'],
                     $item['price'],
                     $item['quantidade']
@@ -60,8 +78,8 @@ class Pedido
 
             return $pedidoId;
         } catch (PDOException $e) {
-            echo "Erro ao inserir pedido: " . $e->getMessage();
-            return false;
+            error_log("Erro ao inserir pedido: " . $e->getMessage());
+            throw new Exception("Erro ao inserir pedido no banco de dados: " . $e->getMessage());
         }
     }
 }

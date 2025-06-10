@@ -3,8 +3,34 @@ require_once './config/conexao.php';
 require_once './controllers/PedidoController.php';
 
 $pdo = Conexao::conectar();
-
 $pedidoController = new PedidoController($pdo);
+
+// Processar alteração de status
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status']) && isset($_POST['pedido_id'])) {
+    $pedidoId = (int)$_POST['pedido_id'];
+    $novoStatus = $_POST['status'];
+    
+    if ($pedidoController->alterarStatusPedido($pedidoId, $novoStatus)) {
+        $_SESSION['msg_sucesso'] = "Status do pedido atualizado com sucesso!";
+    } else {
+        $_SESSION['msg_erro'] = "Erro ao atualizar status do pedido.";
+    }
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Processar exclusão de pedido
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['pedido_id']) && !isset($_POST['status'])) {
+    $pedidoId = (int)$_POST['pedido_id'];
+    
+    if ($pedidoController->excluirPedido($pedidoId)) {
+        $_SESSION['msg_sucesso'] = "Pedido excluído com sucesso!";
+    } else {
+        $_SESSION['msg_erro'] = "Erro ao excluir pedido.";
+    }
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
 
 $pedidos = $pedidoController->listar();
 
@@ -28,11 +54,12 @@ if (isset($_SESSION['msg_sucesso'])) {
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
-                <th>Cliente</th>
                 <th>Status</th>
                 <th>Pagamento</th>
                 <th>Data</th>
-                <th>Ações (Status/Editar)</th>
+                <th>Itens</th>
+                <th>Total</th>
+                <th>Status</th>
                 <th>Excluir</th>
             </tr>
         </thead>
@@ -40,34 +67,34 @@ if (isset($_SESSION['msg_sucesso'])) {
             <?php
             if (is_array($pedidos) && count($pedidos) > 0) {
                 foreach ($pedidos as $pedido) {
-                    $statusClass = '';
-                    switch ($pedido->status) {
-                        case 'Pendente':
-                            $statusClass = 'status-pendente';
-                            break;
-                        case 'Preparando':
-                            $statusClass = 'status-preparando';
-                            break;
-                        case 'Saiu para entrega':
-                            $statusClass = 'status-saiu-para-entrega';
-                            break;
-                        case 'Entregue':
-                            $statusClass = 'status-entregue';
-                            break;
-                        default:
-                            $statusClass = '';
-                            break;
-                    }
+                    $statusClass = match ($pedido->status) {
+                        'Pendente' => 'status-pendente',
+                        'Preparando' => 'status-preparando',
+                        'Saiu para entrega' => 'status-saiu-para-entrega',
+                        'Entregue' => 'status-entregue',
+                        default => ''
+                    };
 
                     echo "<tr>";
                     echo "<td>" . htmlspecialchars($pedido->id) . "</td>";
-                    echo "<td>" . htmlspecialchars($pedido->nome_cliente) . "</td>";
                     echo "<td class='" . $statusClass . "'>" . htmlspecialchars($pedido->status) . "</td>";
                     echo "<td>" . htmlspecialchars($pedido->forma_pagamento) . "</td>";
                     echo "<td>" . htmlspecialchars(date('d/m/Y H:i', strtotime($pedido->data_pedido))) . "</td>";
-
+                    
+                    // Coluna de Itens
                     echo "<td>";
-                    // Formulário para alterar status - APONTA PARA processar_status.php
+                    if (!empty($pedido->itens)) {
+                        echo "<button type='button' class='btn btn-sm btn-warning' data-bs-toggle='modal' data-bs-target='#itensModal" . $pedido->id . "'>Lista</button>";
+                    } else {
+                        echo "Nenhum item";
+                    }
+                    echo "</td>";
+                    
+                    // Coluna de Total
+                    echo "<td>R$ " . number_format($pedido->total, 2, ',', '.') . "</td>";
+
+                    // Coluna de Ações (Status)
+                    echo "<td>";
                     echo "<form method='POST' class='mb-1'>";
                     echo "<input type='hidden' name='pedido_id' value='" . htmlspecialchars($pedido->id) . "'>";
                     echo "<select class='form-select form-select-sm' name='status' onchange='this.form.submit()'>";
@@ -78,6 +105,7 @@ if (isset($_SESSION['msg_sucesso'])) {
                     }
                     echo "</select>";
                     echo "</form>";
+                    echo "</td>";
 
                     // Coluna de Excluir
                     echo "<td>";
@@ -88,6 +116,33 @@ if (isset($_SESSION['msg_sucesso'])) {
                     echo "</td>";
 
                     echo "</tr>";
+
+                    // Modal para exibir itens
+                    if (!empty($pedido->itens)) {
+                        echo "<div class='modal fade' id='itensModal" . $pedido->id . "' tabindex='-1' aria-labelledby='itensModalLabel" . $pedido->id . "' aria-hidden='true'>";
+                        echo "<div class='modal-dialog'>";
+                        echo "<div class='modal-content'>";
+                        echo "<div class='modal-header'>";
+                        echo "<h5 class='modal-title' id='itensModalLabel" . $pedido->id . "'>Itens do Pedido #" . $pedido->id . "</h5>";
+                        echo "<button type='button' class='btn-close' data-bs-dismiss='modal' aria-label='Close'></button>";
+                        echo "</div>";
+                        echo "<div class='modal-body'>";
+                        echo "<ul class='list-group'>";
+                        foreach ($pedido->itens as $item) {
+                            echo "<li class='list-group-item d-flex justify-content-between align-items-center'>";
+                            echo htmlspecialchars($item['nome']);
+                            echo "<span class='badge bg-primary rounded-pill'>" . htmlspecialchars($item['quantidade']) . "x</span>";
+                            echo "</li>";
+                        }
+                        echo "</ul>";
+                        echo "</div>";
+                        echo "<div class='modal-footer'>";
+                        echo "<button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>Fechar</button>";
+                        echo "</div>";
+                        echo "</div>";
+                        echo "</div>";
+                        echo "</div>";
+                    }
                 }
             } else {
                 echo "<tr><td colspan='7' class='text-center'><p class='alert alert-info'>Nenhum pedido encontrado para exibir.</p></td></tr>";
@@ -96,6 +151,7 @@ if (isset($_SESSION['msg_sucesso'])) {
         </tbody>
     </table>
 </div>
-</body>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
