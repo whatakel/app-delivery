@@ -86,4 +86,9 @@ switch ($pagina) {
         $controller = new LoginController();
         $controller->sair();
         break;
+
+    default:
+        header("Location: index.php");
+        exit;
+        break;
 }

@@ -64,7 +64,17 @@ $pedidos = $controller->listarPedidosCliente();
                 Nenhum item
               <?php endif; ?>
             </td>
-            <td>R$ <?= number_format($pedido['total'], 2, ',', '.') ?></td>
+            <td>
+              <?php
+                $total = 0;
+                if (!empty($pedido['itens'])) {
+                  foreach ($pedido['itens'] as $item) {
+                    $total += $item['preco'] * $item['quantidade'];
+                  }
+                }
+                echo 'R$ ' . number_format($total, 2, ',', '.');
+              ?>
+            </td>
           </tr>
 
           <?php if (!empty($pedido['itens'])): ?>

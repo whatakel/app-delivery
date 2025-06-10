@@ -87,7 +87,7 @@ class Pedido
     {
         try {
             $sql = "SELECT p.*, 
-                    GROUP_CONCAT(CONCAT(ip.nome_produto, ':', ip.quantidade) SEPARATOR '|') as itens_info
+                    GROUP_CONCAT(CONCAT(ip.nome_produto, ':', ip.quantidade, ':', ip.preco_unitario) SEPARATOR '|') as itens_info
                     FROM pedidos p
                     LEFT JOIN itens_pedido ip ON p.id = ip.id_pedido
                     WHERE p.id_usuario = :id_usuario
@@ -104,10 +104,11 @@ class Pedido
                 if (!empty($row['itens_info'])) {
                     $itensArray = explode('|', $row['itens_info']);
                     foreach ($itensArray as $item) {
-                        list($nome, $quantidade) = explode(':', $item);
+                        list($nome, $quantidade, $preco) = explode(':', $item);
                         $itens[] = [
                             'nome' => $nome,
-                            'quantidade' => $quantidade
+                            'quantidade' => $quantidade,
+                            'preco' => $preco
                         ];
                     }
                 }
